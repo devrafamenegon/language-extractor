@@ -1,0 +1,1 @@
+{"version":3,"file":"extractor.d.ts","sourceRoot":"","sources":["../../src/cpp/extractor.ts"],"names":[],"mappings":"AAwBA,2CAA2C;AAC3C,MAAM,MAAM,aAAa,GAAG;IAC1B,aAAa,EAAE,GAAG,CAAC,MAAM,EAAE,MAAM,CAAC,CAAC;IACnC,gBAAgB,EAAE,GAAG,CAAC,MAAM,EAAE,MAAM,CAAC,CAAC;CACvC,CAAC;AAEF;;;;;GAKG;AACH,wBAAgB,gBAAgB,CAAC,UAAU,EAAE,MAAM,GAAG,aAAa,CAkClE"}

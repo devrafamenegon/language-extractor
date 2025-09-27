@@ -1,0 +1,142 @@
+[
+  {
+    "tipo": "palavra_reservada",
+    "codigo": 101,
+    "valor": "int",
+    "linha": 1,
+    "coluna": 1
+  },
+  {
+    "tipo": "identificador",
+    "codigo": 201,
+    "valor": "main",
+    "linha": 1,
+    "coluna": 5
+  },
+  {
+    "tipo": "delimitador",
+    "codigo": 301,
+    "valor": "(",
+    "linha": 1,
+    "coluna": 9
+  },
+  {
+    "tipo": "delimitador",
+    "codigo": 302,
+    "valor": ")",
+    "linha": 1,
+    "coluna": 10
+  },
+  {
+    "tipo": "delimitador",
+    "codigo": 303,
+    "valor": "{",
+    "linha": 1,
+    "coluna": 12
+  },
+  {
+    "tipo": "palavra_reservada",
+    "codigo": 101,
+    "valor": "int",
+    "linha": 3,
+    "coluna": 3
+  },
+  {
+    "tipo": "identificador",
+    "codigo": 202,
+    "valor": "a",
+    "linha": 3,
+    "coluna": 7
+  },
+  {
+    "tipo": "operador",
+    "codigo": 401,
+    "valor": "=",
+    "linha": 3,
+    "coluna": 9
+  },
+  {
+    "tipo": "numero",
+    "codigo": 501,
+    "valor": "0",
+    "linha": 3,
+    "coluna": 11
+  },
+  {
+    "tipo": "delimitador",
+    "codigo": 304,
+    "valor": ";",
+    "linha": 3,
+    "coluna": 12
+  },
+  {
+    "tipo": "identificador",
+    "codigo": 202,
+    "valor": "a",
+    "linha": 4,
+    "coluna": 37
+  },
+  {
+    "tipo": "operador",
+    "codigo": 401,
+    "valor": "=",
+    "linha": 4,
+    "coluna": 39
+  },
+  {
+    "tipo": "identificador",
+    "codigo": 202,
+    "valor": "a",
+    "linha": 4,
+    "coluna": 41
+  },
+  {
+    "tipo": "operador",
+    "codigo": 402,
+    "valor": "+",
+    "linha": 4,
+    "coluna": 43
+  },
+  {
+    "tipo": "numero",
+    "codigo": 502,
+    "valor": "1",
+    "linha": 4,
+    "coluna": 45
+  },
+  {
+    "tipo": "delimitador",
+    "codigo": 304,
+    "valor": ";",
+    "linha": 4,
+    "coluna": 46
+  },
+  {
+    "tipo": "palavra_reservada",
+    "codigo": 102,
+    "valor": "return",
+    "linha": 6,
+    "coluna": 3
+  },
+  {
+    "tipo": "identificador",
+    "codigo": 202,
+    "valor": "a",
+    "linha": 6,
+    "coluna": 10
+  },
+  {
+    "tipo": "delimitador",
+    "codigo": 304,
+    "valor": ";",
+    "linha": 6,
+    "coluna": 11
+  },
+  {
+    "tipo": "delimitador",
+    "codigo": 305,
+    "valor": "}",
+    "linha": 7,
+    "coluna": 1
+  }
+]
