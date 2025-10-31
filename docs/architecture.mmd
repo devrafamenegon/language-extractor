@@ -1,0 +1,54 @@
+flowchart TD
+  subgraph CLI
+    A[src/index.ts]
+  end
+  subgraph Utils
+    U[src/utils/readTextFile.ts]
+  end
+  subgraph Tokenizers
+    M[src/languages/cpp/tokenize/manual.ts]
+    F[src/languages/cpp/tokenize/afn.ts]
+  end
+  subgraph Grammar
+    K[src/languages/cpp/grammar/keywords.ts]
+    P[src/languages/cpp/grammar/punctuators.ts]
+  end
+  subgraph Tokens
+    C[src/languages/cpp/tokens/codes.ts]
+  end
+  subgraph Preprocess
+    PR[src/lex/preprocess/index.ts]
+    BOM[src/lex/preprocess/stripBOM.ts]
+    LS[src/lex/preprocess/lineSplicing.ts]
+    SC[src/lex/preprocess/stripComments.ts]
+  end
+  subgraph Position
+    L[src/lex/position/lineIndex.ts]
+  end
+  subgraph AFN_Core
+    T[src/lex/afn/types.ts]
+    B[src/lex/afn/builders.ts]
+    H[src/lex/afn/helpers.ts]
+  end
+  A --> U
+  A --> M
+  A --> F
+  M --> K
+  M --> P
+  M --> C
+  M --> PR
+  M --> BOM
+  M --> LS
+  M --> SC
+  M --> L
+  F --> K
+  F --> P
+  F --> C
+  F --> PR
+  F --> BOM
+  F --> LS
+  F --> SC
+  F --> L
+  F --> T
+  F --> B
+  F --> H

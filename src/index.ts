@@ -1,6 +1,7 @@
 /**
  * CLI do analisador léxico de C/C++.
  *
+ * 
  * Opções:
  *  - `--json`: salva tokens em `./<arquivo>.tokens.json`
  *  - `--csv`:  salva tokens em `./<arquivo>.tokens.csv`
