@@ -1,5 +1,5 @@
 /**
- * CLI do analisador léxico de C/C++.
+ * CLI do analisador completo de C/C++ (léxico, sintático e semântico).
  *
  * 
  * Opções:
@@ -13,73 +13,75 @@
  *  - `npm run dev -- --csv samples/hello.cpp`
  *  - `npm run dev -- --afn --json samples/hello.cpp`
  */
- 
+
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import { readTextFile } from './utils/readTextFile';
-import { tokenizeOrdered } from './languages/cpp/tokenize/manual';
-import { tokenizeOrderedAfn } from './languages/cpp/tokenize/afn';
+import { Compiler, LexerStage, ParserStage, SemanticStage } from './compiler';
+import { ManualLexerStrategy, AfnLexerStrategy, CppParserStrategy, CppSemanticStrategy } from './languages/cpp';
+import { 
+  ExporterStrategy, 
+  ConsoleExporter, 
+  JsonExporter, 
+  CsvExporter 
+} from './exporters';
 
 async function main(): Promise<void> {
-  // Obtém os argumentos da linha de comando
   const argv = process.argv;
+
   const hasJsonFlag = argv.includes('--json');
   const hasCsvFlag = argv.includes('--csv');
   const useAfn = argv.includes('--afn');
+  
   const positional = argv.filter(a => !a.startsWith('--'));
   const [_nodePath, _scriptPath, cppFilePath] = positional;
 
-  // Verifica se o arquivo C++ foi informado
   const isMissingArgument = !cppFilePath;
   if (isMissingArgument) {
-    console.error('Use: npm run dev -- [--json|--csv] <caminho-do-arquivo.cpp>');
+    console.error('Use: npm run dev -- [--json|--csv] [--afn] <caminho-do-arquivo.cpp>');
     process.exit(1);
   }
 
   const absolutePath = path.resolve(process.cwd(), cppFilePath);
 
-  // Inicia o processo de tokenização
   try {
     const sourceCode = await readTextFile(absolutePath);
-    const tokens = useAfn ? tokenizeOrderedAfn(sourceCode) : tokenizeOrdered(sourceCode);
+    
+    // Configura as estratégias C++
+    const lexerStrategy = useAfn ? new AfnLexerStrategy() : new ManualLexerStrategy();
+    const parserStrategy = new CppParserStrategy();
+    const semanticStrategy = new CppSemanticStrategy();
+    
+    // Cria os stages
+    const lexer = new LexerStage(lexerStrategy);
+    const parser = new ParserStage(parserStrategy);
+    const semantic = new SemanticStage(semanticStrategy);
+    
+    // Executa as 3 fases de análise
+    const compiler = new Compiler(lexer, parser, semantic);
+    const { tokens, errors } = compiler.compile(sourceCode);
 
+    // Cria diretório de resultados
+    const resultsDir = path.join(process.cwd(), 'results');
+    await fs.mkdir(resultsDir, { recursive: true });
+
+    // Seleciona a estratégia de saída
+    let exporter: ExporterStrategy;
     if (hasJsonFlag) {
-      const baseName = path.basename(cppFilePath, path.extname(cppFilePath));
-      const resultsDir = path.join(process.cwd(), 'results');
-      await fs.mkdir(resultsDir, { recursive: true });
-      const outPath = path.join(resultsDir, `${baseName}.tokens.json`);
-      const json = JSON.stringify(tokens, null, 2);
-      await fs.writeFile(outPath, json, 'utf8');
-      console.log(`Arquivo salvo em: ${outPath}`);
-      return;
+      exporter = new JsonExporter();
+    } else if (hasCsvFlag) {
+      exporter = new CsvExporter();
+    } else {
+      exporter = new ConsoleExporter();
     }
 
-    if (hasCsvFlag) {
-      const toCsv = (v: unknown): string => {
-        const s = String(v ?? '');
-        const escaped = s.replace(/"/g, '""');
-        return `"${escaped}"`;
-      };
-      const baseName = path.basename(cppFilePath, path.extname(cppFilePath));
-      const resultsDir = path.join(process.cwd(), 'results');
-      await fs.mkdir(resultsDir, { recursive: true });
-      const outPath = path.join(resultsDir, `${baseName}.tokens.csv`);
-      const lines: string[] = [];
-      lines.push(`${toCsv('token')},${toCsv('codigo')},${toCsv('valor')},${toCsv('linha')},${toCsv('coluna')}`);
-      for (const t of tokens) {
-        lines.push(`${toCsv(t.tipo)},${toCsv(t.codigo)},${toCsv(t.valor)},${toCsv(t.linha)},${toCsv(t.coluna)}`);
-      }
-      const csv = lines.join('\n');
-      await fs.writeFile(outPath, csv, 'utf8');
-      console.log(`Arquivo salvo em: ${outPath}`);
-      return;
-    }
-
-    // Exibe os tokens no console
-    console.log('token, codigo, valor, linha, coluna');
-    for (const t of tokens) {
-      console.log(`${t.tipo}, ${t.codigo}, ${t.valor}, ${t.linha}, ${t.coluna}`);
-    }
+    // Executa a estratégia selecionada
+    await exporter.execute({
+      tokens,
+      errors,
+      filePath: cppFilePath,
+      resultsDir
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Falha ao ler o arquivo: ${message}`);
