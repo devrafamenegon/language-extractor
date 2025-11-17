@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { tokenizeOrdered } from '../src/languages/cpp/tokenize/manual';
-import { analyzeSemantics } from '../src/semantic';
+import { tokenizeOrdered } from '../src/languages/cpp/lexer';
+import { analyzeSemantics } from '../src/languages/cpp/semantic';
 import { ErrorCollector } from '../src/errors';
 
 function getSemanticErrors(source: string) {

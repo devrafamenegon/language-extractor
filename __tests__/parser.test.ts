@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { tokenizeOrdered } from '../src/languages/cpp/tokenize/manual';
-import { parseSyntax } from '../src/parse';
+import { tokenizeOrdered } from '../src/languages/cpp/lexer';
+import { parseSyntax } from '../src/languages/cpp/parser';
 import { ErrorCollector } from '../src/errors';
 
 const parseWithCollector = (source: string): ErrorCollector => {

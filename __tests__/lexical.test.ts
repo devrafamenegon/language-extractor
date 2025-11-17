@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tokenizeOrdered } from '../src/languages/cpp/tokenize/manual';
-import { tokenizeOrderedAfn } from '../src/languages/cpp/tokenize/afn';
+import { tokenizeOrdered, tokenizeOrderedAfn } from '../src/languages/cpp/lexer';
 import { ErrorCollector } from '../src/errors';
 
 const validSource = `
