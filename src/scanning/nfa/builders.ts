@@ -1,9 +1,12 @@
 import { CharPredicate, Afn, AfnState } from './types';
 
 /**
- * Construtores e combinadores para AFNs no estilo Thompson.
- * Fornece primitivas para criar AFNs e combiná-los (concatenação, alternação,
- * fecho de Kleene, etc.), além de utilitários como literal e classes de caracteres.
+ * Construtores de NFAs usando Thompson Construction.
+ * 
+ * Fornece primitivas para criar NFAs e combiná-los:
+ * - Literais e classes de caracteres
+ * - Concatenação e alternação
+ * - Operadores: Kleene (*), plus (+), optional (?)
  */
 
 // Gerador incremental de IDs de estado (útil para depuração)

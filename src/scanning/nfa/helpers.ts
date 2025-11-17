@@ -2,11 +2,12 @@ import { LabeledAfn, MatchResult, Afn, AfnState } from './types';
 import { alternate, createEmptyAfn } from './builders';
 
 /**
- * Helpers para trabalhar com AFNs compostos:
- * - Rotular estados de aceitação com (label, priority)
- * - Combinar múltiplos AFNs por alternação
- * - Fechar por epsilon, mover via transições condicionais
- * - Encontrar o match mais longo com desempate por prioridade
+ * Matchers e combinadores para NFAs (Non-deterministic Finite Automata).
+ * 
+ * - Combina múltiplos NFAs por alternação
+ * - Calcula epsilon-closure
+ * - Move entre estados consumindo caracteres
+ * - Encontra matches mais longos com desempate por prioridade
  */
 
 /**
