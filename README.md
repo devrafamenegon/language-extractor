@@ -10,8 +10,33 @@ Projeto didático que demonstra todas as fases de um compilador front-end, inclu
 - **🚨 Sistema de Erros**: Detecção e reporte unificado de todas as fases
 - **📤 Exportação**: Múltiplos formatos (Console, JSON, CSV)
 
-> 📚 Para entender **conceitos e fluxo do compilador**, leia [CONCEPTS.md](CONCEPTS.md)  
-> 🏗️ Para detalhes **técnicos e arquitetura**, consulte [ARCHITECTURE.md](ARCHITECTURE.md)
+---
+
+## 📖 Documentação Completa
+
+Este projeto possui documentação abrangente dividida em dois guias complementares:
+
+### 📚 [CONCEPTS.md](CONCEPTS.md) - Conceitos de Compiladores
+**Guia educacional sobre a teoria de compiladores**
+- O que é um compilador e como funciona
+- Pré-processamento e pipeline de transformações
+- Análise Léxica: tokenização, AFN, longest-match
+- Análise Sintática: gramáticas, parser recursivo descendente
+- Análise Semântica: tabela de símbolos, escopo
+- Sistema de erros e recuperação em pânico
+- Exemplos passo a passo do fluxo completo
+
+### 🏗️ [ARCHITECTURE.md](ARCHITECTURE.md) - Arquitetura Técnica
+**Detalhes de implementação e design**
+- Arquitetura do sistema e separação de responsabilidades
+- Padrões de design (Strategy, Pipeline, Collector, Builder, Facade)
+- Estrutura de diretórios e módulos
+- Implementação detalhada de cada componente
+- Sistema de tipos e genéricos
+- Extensibilidade: como adicionar novas linguagens e formatos
+- Performance, complexidades e otimizações
+
+---
 
 ### Requisitos
 - Node.js 18+

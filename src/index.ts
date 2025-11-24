@@ -18,13 +18,13 @@ import * as path from 'path';
 import { promises as fs } from 'fs';
 import { readTextFile } from './utils/readTextFile';
 import { Compiler, LexerStage, ParserStage, SemanticStage } from './compiler';
-import { ManualLexerStrategy, AfnLexerStrategy, CppParserStrategy, CppSemanticStrategy } from './languages/cpp';
+import { ManualLexerStrategy, AfnLexerStrategy, CppParserStrategy, CppSemanticStrategy } from './language/cpp';
 import { 
   ExporterStrategy, 
   ConsoleExporter, 
   JsonExporter, 
   CsvExporter 
-} from './exporters';
+} from './exporter';
 
 async function main(): Promise<void> {
   const argv = process.argv;
@@ -47,12 +47,10 @@ async function main(): Promise<void> {
   try {
     const sourceCode = await readTextFile(absolutePath);
     
-    // Configura as estratégias C++
     const lexerStrategy = useAfn ? new AfnLexerStrategy() : new ManualLexerStrategy();
     const parserStrategy = new CppParserStrategy();
     const semanticStrategy = new CppSemanticStrategy();
     
-    // Cria os stages
     const lexer = new LexerStage(lexerStrategy);
     const parser = new ParserStage(parserStrategy);
     const semantic = new SemanticStage(semanticStrategy);
@@ -66,22 +64,17 @@ async function main(): Promise<void> {
     await fs.mkdir(resultsDir, { recursive: true });
 
     // Seleciona a estratégia de saída
-    let exporter: ExporterStrategy;
-    if (hasJsonFlag) {
-      exporter = new JsonExporter();
-    } else if (hasCsvFlag) {
-      exporter = new CsvExporter();
-    } else {
-      exporter = new ConsoleExporter();
-    }
+    let exporter: ExporterStrategy = new ConsoleExporter();
+    if (hasJsonFlag) exporter = new JsonExporter();
+    if (hasCsvFlag) exporter = new CsvExporter();
 
-    // Executa a estratégia selecionada
     await exporter.execute({
       tokens,
       errors,
       filePath: cppFilePath,
       resultsDir
     });
+
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Falha ao ler o arquivo: ${message}`);

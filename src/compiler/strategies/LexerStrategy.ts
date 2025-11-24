@@ -1,4 +1,4 @@
-import { ErrorCollector } from '../../errors';
+import { ErrorCollector } from '../../error';
 
 /**
  * Interface genérica de Token.

@@ -1,926 +1,717 @@
-# 📚 Guia Conceitual - Language Extractor
+# 📚 Conceitos de Compiladores - Language Extractor
 
-> **Entendendo como funciona um compilador de forma didática e conceitual.**
-
-Este documento explica **O QUE** o projeto faz e **POR QUE**, sem entrar em detalhes técnicos de implementação.  
-Para detalhes técnicos, consulte [ARCHITECTURE.md](ARCHITECTURE.md).
+Este documento explica os **conceitos fundamentais** de compiladores implementados neste projeto. É um guia educacional para entender como funciona cada fase da compilação.
 
 ---
 
 ## 📖 Índice
 
-1. [O que é um Compilador?](#-o-que-é-um-compilador)
-2. [As Três Fases da Compilação](#-as-três-fases-da-compilação)
-3. [Fase 1: Análise Léxica](#-fase-1-análise-léxica-tokenização)
-4. [Fase 2: Análise Sintática](#-fase-2-análise-sintática-parsing)
-5. [Fase 3: Análise Semântica](#-fase-3-análise-semântica-validação)
-6. [Sistema de Detecção de Erros](#-sistema-de-detecção-de-erros)
-7. [Fluxo Completo com Exemplo](#-fluxo-completo-com-exemplo)
-8. [Como Usar o Projeto](#-como-usar-o-projeto)
+1. [O que é um Compilador?](#o-que-é-um-compilador)
+2. [Fases do Compilador](#fases-do-compilador)
+3. [Pré-processamento](#pré-processamento)
+4. [Análise Léxica (Lexer)](#análise-léxica-lexer)
+5. [Análise Sintática (Parser)](#análise-sintática-parser)
+6. [Análise Semântica](#análise-semântica)
+7. [Sistema de Erros](#sistema-de-erros)
+8. [Fluxo Completo de Compilação](#fluxo-completo-de-compilação)
 
 ---
 
-## 🤔 O que é um Compilador?
+## O que é um Compilador?
 
-Um **compilador** é um programa que traduz código-fonte (escrito por humanos) em código de máquina (executável pelo computador).
+Um **compilador** é um programa que traduz código fonte escrito em uma linguagem de programação (como C++) para outra forma (código de máquina, bytecode, ou outra linguagem).
 
-### Analogia: Traduzindo um Livro
+### Front-end vs Back-end
 
-Imagine que você precisa traduzir um livro do inglês para o português. O processo seria:
+Um compilador típico é dividido em duas partes:
 
-1. **Ler as palavras** (reconhecer o que é verbo, substantivo, pontuação)
-2. **Entender as frases** (verificar se a gramática está correta)
-3. **Compreender o significado** (garantir que as frases fazem sentido no contexto)
-4. **Escrever em português** (gerar o resultado final)
+- **Front-end** (o que este projeto implementa):
+  - Análise léxica
+  - Análise sintática
+  - Análise semântica
+  - Geração de representação intermediária
 
-Um compilador faz exatamente isso com código!
+- **Back-end** (não implementado aqui):
+  - Otimização
+  - Geração de código
+  - Alocação de registradores
 
-```
-Código C++  →  [Compilador]  →  Código de Máquina
-   (input)                          (output)
-```
-
-### Front-End vs Back-End
-
-- **Front-End (nosso projeto)**: Entende e valida o código-fonte
-- **Back-End**: Gera o código de máquina otimizado
-
-Nosso projeto é um **compilador front-end educacional** que foca nas três primeiras fases.
+Este projeto é um **compilador front-end educacional** focado nas fases de análise.
 
 ---
 
-## 🔄 As Três Fases da Compilação
-
-Nosso compilador processa o código em **três fases sequenciais**:
+## Fases do Compilador
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   Código-Fonte C++                      │
-│              int main() { return 0; }                   │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ↓
-┌────────────────────────────────────────────────────────┐
-│           FASE 1: Análise Léxica                       │
-│           Transforma texto em tokens                   │
-│                                                        │
-│  "int main() { return 0; }"                           │
-│         ↓                                              │
-│  [int][main][{][return][0][;][}]                      │
-└────────────────────┬───────────────────────────────────┘
-                     │
-                     ↓
-┌────────────────────────────────────────────────────────┐
-│           FASE 2: Análise Sintática                    │
-│         Verifica estrutura gramatical                  │
-│                                                        │
-│  [int][main][{][return][0][;][}]                      │
-│         ↓                                              │
-│  ✓ Estrutura válida (função com corpo)                │
-└────────────────────┬───────────────────────────────────┘
-                     │
-                     ↓
-┌────────────────────────────────────────────────────────┐
-│           FASE 3: Análise Semântica                    │
-│      Valida significado e contexto                     │
-│                                                        │
-│  ✓ 'main' é declarado corretamente                    │
-│  ✓ 'return 0' faz sentido em uma função int           │
-└────────────────────┬───────────────────────────────────┘
-                     │
-                     ↓
-┌────────────────────────────────────────────────────────┐
-│              ✅ Código Válido!                         │
-│         Pronto para próximas fases                     │
-└────────────────────────────────────────────────────────┘
-```
-
-Cada fase **valida** o código e **reporta erros** se encontrar problemas.
-
----
-
-## 🔍 Fase 1: Análise Léxica (Tokenização)
-
-### O Que Faz?
-
-Quebra o texto em **pedaços significativos** chamados **tokens**.
-
-### Analogia: Separando Palavras
-
-Imagine esta frase em português:
-
-```
-"Ojogadorchutouabolaparaogol"
-```
-
-É difícil de ler! A análise léxica faz o equivalente a:
-
-```
-"O jogador chutou a bola para o gol"
-    ↓
-[O] [jogador] [chutou] [a] [bola] [para] [o] [gol]
-```
-
-Cada pedaço é classificado:
-- **Artigo**: O, a, o
-- **Substantivo**: jogador, bola, gol
-- **Verbo**: chutou
-
-### Em C++
-
-```cpp
-int main() { return 0; }
-```
-
-**Tokenização**:
-
-```
-Token 1: "int"     → Palavra reservada (tipo)
-Token 2: "main"    → Identificador (nome de função)
-Token 3: "("       → Delimitador (abre parênteses)
-Token 4: ")"       → Delimitador (fecha parênteses)
-Token 5: "{"       → Delimitador (abre bloco)
-Token 6: "return"  → Palavra reservada (retorno)
-Token 7: "0"       → Número (literal inteiro)
-Token 8: ";"       → Delimitador (fim de instrução)
-Token 9: "}"       → Delimitador (fecha bloco)
-```
-
-### Informações Coletadas
-
-Cada token armazena:
-- **Tipo**: O que ele representa (número, identificador, operador...)
-- **Valor**: O texto original ("main", "123", "+")
-- **Posição**: Linha e coluna onde aparece (para relatórios de erro)
-
-### Exemplo de Saída
-
-| Tipo              | Código | Valor  | Linha | Coluna |
-|-------------------|--------|--------|-------|--------|
-| palavra_reservada | 101    | int    | 1     | 1      |
-| identificador     | 201    | main   | 1     | 5      |
-| delimitador       | 301    | (      | 1     | 9      |
-| delimitador       | 302    | )      | 1     | 10     |
-| delimitador       | 303    | {      | 1     | 12     |
-| palavra_reservada | 115    | return | 1     | 14     |
-| numero            | 401    | 0      | 1     | 21     |
-| delimitador       | 304    | ;      | 1     | 22     |
-| delimitador       | 305    | }      | 1     | 24     |
-
-### Erros Detectados
-
-A análise léxica detecta problemas como:
-
-❌ **Caractere Inválido**
-```cpp
-int x = 10 @ 5;  // '@' não é válido em C++
-         //  ^--- ERRO: Caractere inválido
-```
-
-❌ **String Não Fechada**
-```cpp
-printf("Hello World
-       //  ^--- ERRO: String não foi fechada
-```
-
-❌ **Comentário Não Fechado**
-```cpp
-/* Este comentário nunca fecha...
-int main() {
-  return 0;
-}
-// ^--- ERRO: Comentário /* */ não foi fechado
+┌─────────────────┐
+│  Código Fonte   │  "int main() { ... }"
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Pré-processador │  Remove BOM, faz line splicing, remove comentários
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Análise Léxica  │  Gera sequência de tokens
+└────────┬────────┘  [int, main, (, ), {, ...}
+         │
+         ▼
+┌─────────────────┐
+│ Análise         │  Verifica estrutura sintática
+│ Sintática       │  (gramática da linguagem)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Análise         │  Verifica regras de tipos,
+│ Semântica       │  escopos, declarações
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Tokens + AST   │  Saída: tokens válidos + erros (se houver)
+└─────────────────┘
 ```
 
 ---
 
-## 📝 Fase 2: Análise Sintática (Parsing)
+## Pré-processamento
 
-### O Que Faz?
+Antes da tokenização, o código fonte passa por uma **pipeline de pré-processamento** que prepara o texto mantendo a correspondência de posições.
 
-Verifica se os tokens formam uma **estrutura válida** segundo as regras da gramática da linguagem.
+### Por que preservar posições?
 
-### Analogia: Verificando a Gramática
+É crucial manter os **índices originais** do código para reportar erros com linha e coluna corretas, mesmo após remover comentários.
 
-Em português, você não pode dizer:
+### Pipeline de Pré-processamento
+
+#### 1. **Strip BOM** (Byte Order Mark)
+Remove o BOM UTF-8 (`\uFEFF`) se presente no início do arquivo.
 
 ```
-❌ "Cachorro late o rapidamente"  → Gramática errada
-✅ "O cachorro late rapidamente"  → Gramática correta
+Entrada:  "\uFEFFint main()"
+Saída:    "int main()"
 ```
 
-A análise sintática faz o mesmo com código!
+#### 2. **Line Splicing**
+Une linhas terminadas com `\` (backslash), seguindo a especificação C/C++.
 
-### Em C++
-
-O parser verifica se a sequência de tokens forma **declarações válidas**:
-
-✅ **Válido**:
-```cpp
-int x = 10;
 ```
-```
-[int] [x] [=] [10] [;]
-  ↓    ↓   ↓   ↓   ↓
-[tipo][id][op][num][fim]  → Declaração de variável válida ✓
+Entrada:  "int x = \\\n    42;"
+Saída:    "int x =     42;"
+          ^^^^^^^^^ espaços mantidos para preservar posição
 ```
 
-❌ **Inválido**:
-```cpp
-int x = ;
+#### 3. **Strip Comments**
+Remove comentários **mantendo o comprimento** do texto original.
+
 ```
-```
-[int] [x] [=] [;]
-  ↓    ↓   ↓   ↓
-[tipo][id][op][fim]  → Falta valor! ✗
-```
-
-### Estruturas Verificadas
-
-O parser reconhece e valida:
-
-1. **Declarações de Variáveis**
-   ```cpp
-   int x = 10;
-   float y;
-   ```
-
-2. **Declarações de Funções**
-   ```cpp
-   int soma(int a, int b) {
-     return a + b;
-   }
-   ```
-
-3. **Expressões**
-   ```cpp
-   x = a + b * c;
-   ```
-
-4. **Blocos de Código**
-   ```cpp
-   {
-     int x = 10;
-     return x;
-   }
-   ```
-
-### Erros Detectados
-
-❌ **Parêntese Não Fechado**
-```cpp
-int main( {
-       //  ^--- ERRO: Esperado ')', encontrado '{'
+Entrada:  "int a; // comentário\nint b;"
+Saída:    "int a;                \nint b;"
+          ^^^^^^^^^^^^^^^^^^^^^^ espaços preservam índices
 ```
 
-❌ **Ponto-e-Vírgula Faltando**
-```cpp
-int x = 10
-return x;
-        //  ^--- ERRO: Esperado ';' após declaração
-```
-
-❌ **Token Inesperado**
-```cpp
-int main() {
-  return 0 }
-        //  ^--- ERRO: Esperado ';', encontrado '}'
-```
-
-❌ **Chave Não Fechada**
-```cpp
-int main() {
-  return 0;
-  // ^--- ERRO: Bloco não foi fechado (falta '}')
-```
+**Por que espaços em vez de remoção completa?**
+- Mantém os índices absolutos inalterados
+- Permite mapear tokens de volta ao código original
+- Essencial para reportar linha/coluna corretas
 
 ---
 
-## 🧠 Fase 3: Análise Semântica (Validação)
+## Análise Léxica (Lexer)
 
-### O Que Faz?
+A análise léxica (ou **tokenização**) transforma uma sequência de caracteres em uma sequência de **tokens** (unidades léxicas significativas).
 
-Verifica se o código **faz sentido** no contexto, mesmo que a gramática esteja correta.
+### O que é um Token?
 
-### Analogia: Verificando o Significado
-
-Em português, esta frase é gramaticalmente correta, mas não faz sentido:
-
-```
-✅ Gramática: "O gato bebeu o vento com o chapéu"
-❌ Significado: Gatos não bebem vento!
-```
-
-A análise semântica encontra esse tipo de erro em código.
-
-### Em C++
-
-✅ **Válido**:
-```cpp
-int x = 10;
-printf("%d", x);  // ✓ 'x' foi declarado antes de ser usado
-```
-
-❌ **Inválido** (gramática OK, mas semântica errada):
-```cpp
-printf("%d", x);  // ✗ 'x' não foi declarado!
-int x = 10;
-```
-
-### O Que é Verificado?
-
-#### 1. **Declaração de Identificadores**
-
-Toda variável/função deve ser **declarada antes de usar**:
+Um token é uma unidade atômica de significado na linguagem:
 
 ```cpp
 int main() {
-  x = 10;        // ❌ ERRO: 'x' não foi declarado
-  int x;         // Declaração veio tarde demais
-  return 0;
+│   │    │  │
+│   │    │  └── token: delimitador '{'
+│   │    └───── token: delimitador ')'
+│   └────────── token: identificador 'main'
+└────────────── token: palavra_reservada 'int'
+```
+
+### Estrutura de um Token
+
+```typescript
+{
+  tipo: 'palavra_reservada',  // categoria do token
+  codigo: 101,                // código único para este tipo/valor
+  valor: 'int',               // lexema (texto original)
+  linha: 1,                   // linha no código (1-based)
+  coluna: 1                   // coluna no código (1-based)
 }
 ```
 
-Correto:
-```cpp
-int main() {
-  int x;         // ✅ Declaração primeiro
-  x = 10;        // ✅ Uso depois
-  return 0;
-}
+### Categorias de Tokens
+
+| Categoria | Exemplos | Código Base |
+|-----------|----------|-------------|
+| `palavra_reservada` | `int`, `if`, `return` | 101+ |
+| `identificador` | `main`, `variavel`, `myFunc` | 201+ |
+| `delimitador` | `(`, `)`, `{`, `}`, `;` | 301+ |
+| `operador` | `+`, `-`, `*`, `==`, `++` | 401+ |
+| `numero` | `42`, `123`, `0` | 501+ |
+| `string` | `"hello"`, `"world"` | 601+ |
+| `caractere` | `'a'`, `'\n'` | 701+ |
+
+### Estratégias de Tokenização
+
+Este projeto implementa **duas estratégias** diferentes:
+
+#### 1. **Tokenização Manual** (Padrão)
+Usa loops e regex para reconhecer padrões.
+
+**Vantagens:**
+- Simples de entender
+- Boa performance
+- Fácil de debugar
+
+**Processo:**
+```
+1. Percorre caractere por caractere
+2. Identifica início de padrão (dígito, letra, operador...)
+3. Consome caracteres até o fim do padrão
+4. Cria token com tipo, valor e posição
+5. Repete até o fim do código
 ```
 
-#### 2. **Redeclaração**
+#### 2. **Tokenização por AFN** (Thompson)
+Usa **Autômatos Finitos Não-Determinísticos** (NFA em inglês).
 
-Um identificador **não pode ser declarado duas vezes no mesmo escopo**:
+**Vantagens:**
+- Demonstra teoria de linguagens formais
+- Mais flexível para gramáticas complexas
+- Implementa longest-match naturalmente
 
-```cpp
-int main() {
-  int x = 10;
-  int x = 20;    // ❌ ERRO: 'x' já foi declarado
-  return 0;
-}
+**Processo:**
+```
+1. Constrói AFN combinando regras (números, identificadores, operadores...)
+2. Para cada posição no texto:
+   - Executa AFN em paralelo para todas as regras
+   - Escolhe o match mais longo (longest-match)
+   - Em empate, usa prioridade (strings > operadores)
+3. Cria token com o match vencedor
 ```
 
-#### 3. **Escopo**
+### Longest-Match e Prioridade
 
-Variáveis só existem dentro do bloco onde foram declaradas:
+**Longest-Match**: Sempre escolhe o token mais longo possível.
 
 ```cpp
-int main() {
-  {
-    int x = 10;  // ✅ Declarado aqui
+int abc;
+│   │
+│   └── 'abc' (não 'a', 'ab')
+└────── 'int' (não 'i', 'in')
+```
+
+**Prioridade**: Em empate de comprimento, usa prioridade definida.
+
+```cpp
+if
+│└── palavra_reservada 'if' (não identificador)
+```
+
+### Palavras-chave vs Identificadores
+
+Palavras-chave são identificadores **reservados**:
+
+```
+1. Reconhece padrão de identificador: [A-Za-z_][A-Za-z0-9_]*
+2. Verifica se está na tabela de palavras-chave
+3. Se sim → palavra_reservada
+4. Se não → identificador
+```
+
+### Detecção de Erros Léxicos
+
+O lexer detecta:
+
+- **Strings não fechadas**: `"hello` (sem aspas finais)
+- **Caracteres não fechados**: `'a` (sem aspas finais)
+- **Comentários não fechados**: `/* comentário` (sem `*/`)
+- **Caracteres inválidos**: `@`, `#` (fora de strings)
+
+**Exemplo:**
+```cpp
+int x = "unclosed string
+        ^ ERRO: string não fechada (linha 1, coluna 9)
+```
+
+---
+
+## Análise Sintática (Parser)
+
+A análise sintática verifica se a sequência de tokens segue a **gramática** da linguagem.
+
+### O que é uma Gramática?
+
+Uma gramática define as **regras de estrutura** válidas:
+
+```
+programa     → declarações
+declaração   → tipo identificador inicialização
+inicialização → '=' expressão ';' | '(' parâmetros ')' bloco
+expressão    → termo (('+' | '-') termo)*
+termo        → fator (('*' | '/') fator)*
+fator        → número | identificador | '(' expressão ')'
+```
+
+### Parser Recursivo Descendente
+
+Este projeto usa **parser recursivo descendente** (top-down parsing):
+
+```typescript
+function declaração() {
+  match('palavra_reservada');  // int
+  match('identificador');       // main
+  
+  if (match('(')) {
+    // É uma função
+    expressão();
+    expecta(')');
   }
-  printf("%d", x);  // ❌ ERRO: 'x' não existe neste escopo
-  return 0;
+  
+  if (match('{')) {
+    // Tem bloco
+    while (!match('}')) {
+      declaração();
+    }
+  }
 }
 ```
 
-#### 4. **Funções**
+### Precedência de Operadores
 
-Funções devem ser declaradas antes de serem chamadas:
+O parser implementa precedência através da estrutura recursiva:
+
+```
+expressão → igualdade
+igualdade → comparação (('==' | '!=') comparação)*
+comparação → termo (('<' | '>' | '<=' | '>=') termo)*
+termo → fator (('+' | '-') fator)*
+fator → unário (('*' | '/') unário)*
+unário → ('-' | '!')? primário
+primário → número | identificador | '(' expressão ')'
+```
+
+**Ordem de precedência** (maior para menor):
+1. Primários (números, identificadores, parênteses)
+2. Unários (`-`, `!`)
+3. Multiplicação/Divisão (`*`, `/`)
+4. Adição/Subtração (`+`, `-`)
+5. Comparação (`<`, `>`, `<=`, `>=`)
+6. Igualdade (`==`, `!=`)
+
+### Validação de Delimitadores
+
+O parser valida **balanceamento de delimitadores**:
 
 ```cpp
 int main() {
-  soma(1, 2);    // ❌ ERRO: 'soma' não foi declarada
-  return 0;
-}
-
-int soma(int a, int b) {  // Declaração veio depois
-  return a + b;
+  if (x > 0 {    // ERRO: esperado ')', encontrado '{'
+    return 1;
+  }
 }
 ```
 
-### Erros Detectados
-
-❌ **Variável Não Declarada**
-```cpp
-int main() {
-  count = 10;
-  // ^--- ERRO: 'count' não foi declarado neste escopo
-  return 0;
-}
+**Implementação com pilha:**
+```
+1. Ao encontrar '(', '{', '[' → empilha
+2. Ao encontrar ')', '}', ']' → desempilha e valida par
+3. No fim do parsing → verifica se pilha está vazia
 ```
 
-❌ **Redeclaração**
-```cpp
-int x = 10;
-int x = 20;
-  // ^--- ERRO: 'x' já foi declarado anteriormente
-```
+### Detecção de Erros Sintáticos
 
-❌ **Função Não Declarada**
-```cpp
-int main() {
-  calcular();
-  // ^--- ERRO: Função 'calcular' não foi declarada
-  return 0;
-}
-```
+O parser detecta:
+
+- **Tokens inesperados**: `int ) main`
+- **Tokens faltando**: `int main ( { }`
+- **Delimitadores não fechados**: `int main() {` (sem `}`)
+- **Pares incompatíveis**: `( ]`, `{ )`
 
 ---
 
-## 🚨 Sistema de Detecção de Erros
+## Análise Semântica
 
-### Como Funciona?
+A análise semântica verifica **regras de significado** que não podem ser expressas na gramática sintática.
 
-O compilador coleta **todos os erros** de todas as fases e apresenta um **relatório unificado**.
+### O que é Semântica?
 
-### Filosofia: "Não Pare no Primeiro Erro"
+Enquanto a sintaxe verifica **estrutura**, a semântica verifica **significado**:
 
-Diferente de alguns compiladores que param no primeiro erro, nosso sistema:
-
-✅ **Continua analisando** mesmo após encontrar erros  
-✅ **Coleta múltiplos erros** de uma vez  
-✅ **Reporta todos juntos** no final  
-
-**Por quê?** Para economizar tempo do desenvolvedor!
-
-### Exemplo de Relatório
-
-**Código com múltiplos erros**:
 ```cpp
-int main( {
-  printf("Hello World
-  x = 10;
-  return 0;
+int x;
+int x;  // ERRO semântico: x já foi declarado
+```
+
+```cpp
+y = 10;  // ERRO semântico: y não foi declarado
+```
+
+Ambos são **sintaticamente corretos**, mas **semanticamente errados**.
+
+### Tabela de Símbolos
+
+A análise semântica mantém uma **tabela de símbolos**:
+
+```typescript
+{
+  'main': { tipo: 'funcao', linha: 1, coluna: 5 },
+  'x':    { tipo: 'variavel', linha: 2, coluna: 7 },
+  'soma': { tipo: 'funcao', linha: 5, coluna: 5 }
 }
 ```
 
-**Relatório gerado**:
+### Análise de Declarações
+
+**Processo:**
+```
+1. Percorre tokens procurando declarações (tipo + identificador)
+2. Para cada declaração:
+   - Verifica se identificador já existe (redeclaração)
+   - Adiciona à tabela de símbolos
+   - Marca como variável ou função (detecta '(' ou '{')
+```
+
+**Exemplo:**
+```cpp
+int a;           // OK: adiciona 'a' à tabela
+int b = 10;      // OK: adiciona 'b' à tabela
+int a;           // ERRO: 'a' já foi declarado
+
+int main() {     // OK: adiciona 'main' como função
+  int local;     // OK: adiciona 'local' (escopo simplificado)
+}
+```
+
+### Análise de Uso
+
+**Processo:**
+```
+1. Coleta todos os identificadores usados (não em declarações)
+2. Para cada uso:
+   - Verifica se existe na tabela de símbolos
+   - Se não existe → erro: identificador não declarado
+```
+
+**Exemplo:**
+```cpp
+int x = 10;
+int y = x + z;  // ERRO: 'z' não foi declarado
+```
+
+### Escopo Simplificado
+
+Este projeto implementa escopo **simplificado** por proximidade:
+
+```cpp
+int x;      // linha 1
+int x;      // linha 2 - ERRO: muito próximo da linha 1
+
+// ... 20 linhas depois ...
+int x;      // linha 22 - OK: longe o suficiente (escopo diferente presumido)
+```
+
+**Threshold**: 10 linhas de distância
+
+### Detecção de Erros Semânticos
+
+- **Identificador não declarado**: uso de variável/função inexistente
+- **Identificador redeclarado**: múltiplas declarações no mesmo escopo
+- **Tipo incompatível** (preparado para expansão)
+- **Função não declarada** (preparado para expansão)
+
+---
+
+## Sistema de Erros
+
+O sistema de erros é **centralizado** e **unificado** para todas as fases.
+
+### ErrorCollector
+
+Um único `ErrorCollector` recebe erros de todas as fases:
+
+```typescript
+const errorCollector = new ErrorCollector();
+
+// Fase léxica
+errorCollector.addLexical({
+  fase: 'lexico',
+  tipo: 'string_nao_fechada',
+  mensagem: 'String não fechada',
+  linha: 5,
+  coluna: 12,
+  trecho: '"hello'
+});
+
+// Fase sintática
+errorCollector.addSyntactic({
+  fase: 'sintatico',
+  tipo: 'parentese_nao_fechado',
+  mensagem: 'Parêntese não fechado',
+  linha: 7,
+  coluna: 3,
+  trecho: '(',
+  esperado: ')',
+  encontrado: '}'
+});
+
+// Fase semântica
+errorCollector.addSemantic({
+  fase: 'semantico',
+  tipo: 'identificador_nao_declarado',
+  mensagem: 'Identificador "x" não declarado',
+  linha: 10,
+  coluna: 5,
+  trecho: 'x',
+  identificador: 'x'
+});
+```
+
+### Formato de Relatório
+
 ```
 ========== RELATÓRIO DE ERROS ==========
+  linha:coluna → mensagem | contexto
 
 [ANÁLISE LÉXICA] 1 erro(s)
-  - 2:10    String não fechada | printf("Hello World
+  - 5:12    String não fechada | "hello
 
 [ANÁLISE SINTÁTICA] 1 erro(s)
-  - 1:11    Token inesperado | "(" (esperado=); encontrado={)
+  - 7:3     Parêntese não fechado | ( (esperado=); encontrado=})
 
 [ANÁLISE SEMÂNTICA] 1 erro(s)
-  - 3:3     Identificador "x" não foi declarado | x = 10;
+  - 10:5    Identificador "x" não declarado | x (identificador=x)
 
 TOTAL GERAL: 3 erro(s)
 ```
 
-### Formato do Relatório
+### Estratégia de Recuperação
 
-Cada erro mostra:
-- **Fase**: Onde foi detectado (léxica, sintática, semântica)
-- **Posição**: Linha e coluna exata
-- **Tipo**: O que deu errado
-- **Contexto**: Trecho do código com o problema
-- **Dica**: O que era esperado (quando aplicável)
+O compilador usa **recuperação em modo pânico**:
+
+```
+1. Ao encontrar erro → reporta
+2. Continua analisando (não para no primeiro erro)
+3. Coleta TODOS os erros de todas as fases
+4. Reporta tudo de uma vez
+```
+
+**Vantagens:**
+- Usuário vê todos os problemas de uma vez
+- Economiza tempo de compilação iterativa
+- Melhor experiência de desenvolvimento
 
 ---
 
-## 🎬 Fluxo Completo com Exemplo
+## Fluxo Completo de Compilação
 
-Vamos acompanhar a jornada de um arquivo C++ através do compilador!
+### Visão Geral
 
-### 📄 Código de Entrada
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    CÓDIGO FONTE (input.cpp)                   │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────┐
+        │   Pré-processamento          │
+        │  - Strip BOM                 │
+        │  - Line Splicing             │
+        │  - Strip Comments            │
+        └──────────────┬───────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────┐
+        │   FASE 1: Análise Léxica     │◄────┐
+        │  - Tokenização               │     │
+        │  - Detecção de erros léxicos │     │
+        └──────────────┬───────────────┘     │
+                       │                     │
+                       ▼                     │
+                  [Token[]]                  │
+                       │                     │
+                       ▼                     │
+        ┌──────────────────────────────┐    │
+        │   FASE 2: Análise Sintática  │    │
+        │  - Parsing recursivo         │    │ ErrorCollector
+        │  - Validação de estrutura    │────┤ (centralizado)
+        │  - Detecção de erros sintát. │    │
+        └──────────────┬───────────────┘    │
+                       │                     │
+                       ▼                     │
+                  [Token[]]                  │
+                       │                     │
+                       ▼                     │
+        ┌──────────────────────────────┐    │
+        │   FASE 3: Análise Semântica  │    │
+        │  - Tabela de símbolos        │    │
+        │  - Verificação de escopo     │────┘
+        │  - Detecção de erros semânt. │
+        └──────────────┬───────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────┐
+        │      Agregação de Erros      │
+        │  - Coleta erros das 3 fases  │
+        │  - Formata relatório         │
+        └──────────────┬───────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────┐
+        │      Exportação (Strategy)   │
+        │  - Console                   │
+        │  - JSON                      │
+        │  - CSV                       │
+        └──────────────┬───────────────┘
+                       │
+                       ▼
+              Tokens + Erros
+```
 
-**Arquivo**: `hello.cpp`
+### Exemplo Passo a Passo
+
+**Código fonte:**
 ```cpp
-#include <stdio.h>
-
 int main() {
-  printf("Hello, World!\n");
-  return 0;
+  int a = "unclosed;
+  b = 10;
 }
 ```
 
----
-
-### **Etapa 0: Pré-Processamento** 🧹
-
-Antes da análise, o código passa por uma limpeza:
-
-1. **Remove BOM** (Byte Order Mark UTF-8)
-2. **Junta linhas** que terminam com `\`
-3. **Remove comentários** (mas preserva as posições)
-
-**Antes**:
-```cpp
-// Este é um comentário
-int main() { /* inline */ return 0; }
+**Passo 1: Pré-processamento**
+```
+Input:  'int main() {\n  int a = "unclosed;\n  b = 10;\n}'
+Output: 'int main() {\n  int a = "unclosed;\n  b = 10;\n}'
+        (sem mudanças, pois não há BOM, line splicing ou comentários)
 ```
 
-**Depois**:
-```cpp
-                        
-int main() {              return 0; }
+**Passo 2: Análise Léxica**
+```
+Tokens gerados:
+  [int, main, (, ), {, int, a, =]
+  
+Erro detectado:
+  ❌ Linha 2, coluna 11: String não fechada (""unclosed;")
 ```
 
-> **Importante**: Os espaços substituem os comentários para manter as posições corretas!
-
----
-
-### **Fase 1: Análise Léxica** 🔍
-
-**Entrada**: Texto limpo  
-**Saída**: Lista de tokens
-
-**Tokens Gerados**:
-
-| # | Tipo              | Valor  | Linha | Coluna |
-|---|-------------------|--------|-------|--------|
-| 1 | palavra_reservada | int    | 3     | 1      |
-| 2 | identificador     | main   | 3     | 5      |
-| 3 | delimitador       | (      | 3     | 9      |
-| 4 | delimitador       | )      | 3     | 10     |
-| 5 | delimitador       | {      | 3     | 12     |
-| 6 | identificador     | printf | 4     | 3      |
-| 7 | delimitador       | (      | 4     | 9      |
-| 8 | string            | "Hello, World!\n" | 4 | 10 |
-| 9 | delimitador       | )      | 4     | 28     |
-| 10| delimitador       | ;      | 4     | 29     |
-| 11| palavra_reservada | return | 5     | 3      |
-| 12| numero            | 0      | 5     | 10     |
-| 13| delimitador       | ;      | 5     | 11     |
-| 14| delimitador       | }      | 6     | 1      |
-
-**Resultado**: ✅ 14 tokens reconhecidos, 0 erros
-
----
-
-### **Fase 2: Análise Sintática** 📝
-
-**Entrada**: Lista de tokens  
-**Saída**: Validação da estrutura
-
-**O que o parser verifica**:
-
-1. ✅ `int main()` → Declaração de função válida
-2. ✅ `{ ... }` → Bloco de código balanceado
-3. ✅ `printf(...)` → Chamada de função válida
-4. ✅ `return 0;` → Statement de retorno válido
-
-**Resultado**: ✅ Estrutura sintática correta, 0 erros
-
----
-
-### **Fase 3: Análise Semântica** 🧠
-
-**Entrada**: Tokens validados  
-**Saída**: Validação de significado
-
-**O que o analisador verifica**:
-
-1. ✅ `main` → Declarado como função (OK)
-2. ⚠️ `printf` → Função externa (assumido OK, seria erro sem `#include`)
-3. ✅ `return 0` → Tipo compatível com `int main()` (OK)
-
-**Resultado**: ✅ Semântica válida, 0 erros
-
----
-
-### **Saída Final** 📤
-
-#### **Modo Console** 🖥️
-
+**Passo 3: Análise Sintática**
 ```
-Token: int       | Código: 101 | Linha: 3 | Coluna: 1
-Token: main      | Código: 201 | Linha: 3 | Coluna: 5
-Token: (         | Código: 301 | Linha: 3 | Coluna: 9
-...
+Parser continua mesmo com erro léxico anterior
+
+Erro detectado:
+  ❌ Linha 2, coluna 20: Token inesperado ';' (esperava-se '"')
 ```
 
-#### **Modo JSON** 📄
+**Passo 4: Análise Semântica**
+```
+Tabela de símbolos:
+  - main (função, linha 1)
+  - a (variável, linha 2)
 
-```json
-[
-  {
-    "tipo": "palavra_reservada",
-    "codigo": 101,
-    "valor": "int",
-    "linha": 3,
-    "coluna": 1
-  },
-  {
-    "tipo": "identificador",
-    "codigo": 201,
-    "valor": "main",
-    "linha": 3,
-    "coluna": 5
-  }
-]
+Erro detectado:
+  ❌ Linha 3, coluna 3: Identificador 'b' não declarado
 ```
 
-#### **Modo CSV** 📊
-
-```csv
-"token","codigo","valor","linha","coluna"
-"palavra_reservada","101","int","3","1"
-"identificador","201","main","3","5"
-```
-
----
-
-### 🔴 E Se Tivesse Erros?
-
-**Código com erro**:
-```cpp
-int main() {
-  printf("Hello World
-  x = 10;
-  return 0;
-}
-```
-
-**Saída**:
+**Passo 5: Relatório Final**
 ```
 ========== RELATÓRIO DE ERROS ==========
 
 [ANÁLISE LÉXICA] 1 erro(s)
-  - 2:10    String não fechada
-    printf("Hello World
-           ^--- Esperado '"' antes do fim da linha
+  - 2:11    String não fechada | "unclosed;
+
+[ANÁLISE SINTÁTICA] 1 erro(s)
+  - 2:20    Token inesperado ; | ; (esperado="; encontrado=;)
 
 [ANÁLISE SEMÂNTICA] 1 erro(s)
-  - 3:3     Identificador "x" não foi declarado
-    x = 10;
-    ^--- 'x' não existe neste escopo
+  - 3:3     Identificador "b" não declarado | b (identificador=b)
 
-TOTAL GERAL: 2 erro(s)
-
-❌ Compilação falhou com 2 erro(s)
-```
-
-**Exit code**: `1` (indica falha)
-
----
-
-## 💻 Como Usar o Projeto
-
-### 1️⃣ Instalação
-
-```bash
-# Clone o repositório
-git clone <repo-url>
-cd language-extractor
-
-# Instale as dependências
-npm install
-```
-
-### 2️⃣ Análise Básica
-
-```bash
-# Analisa e mostra tokens no console
-npm run dev -- samples/hello.cpp
-```
-
-**Saída**:
-```
-Token: int       | Código: 101 | Linha: 1 | Coluna: 1
-Token: main      | Código: 201 | Linha: 1 | Coluna: 5
-...
-
-✅ Análise concluída: 14 tokens, 0 erros
-```
-
-### 3️⃣ Exportar JSON
-
-```bash
-# Gera arquivo results/hello.tokens.json
-npm run dev -- --json samples/hello.cpp
-```
-
-### 4️⃣ Exportar CSV
-
-```bash
-# Gera arquivo results/hello.tokens.csv
-npm run dev -- --csv samples/hello.cpp
-```
-
-### 5️⃣ Usar Tokenizador NFA
-
-O projeto oferece **duas estratégias de tokenização**:
-
-- **Manual** (padrão): Usa loops e regex simples
-- **NFA** (avançado): Usa autômatos finitos (Thompson Construction)
-
-```bash
-# Usa tokenizador NFA
-npm run dev -- --afn samples/hello.cpp
-
-# Combina com exportação
-npm run dev -- --afn --json samples/hello.cpp
-```
-
-**Qual usar?**
-- **Manual**: Mais simples, educacional, fácil de entender
-- **NFA**: Mais robusto, teórico, usado em compiladores reais
-
-### 6️⃣ Analisar Código com Erros
-
-```bash
-# Cria arquivo com erro
-echo 'int main() { x = 10; }' > test.cpp
-
-# Analisa
-npm run dev -- test.cpp
-```
-
-**Saída**:
-```
-========== RELATÓRIO DE ERROS ==========
-
-[ANÁLISE SEMÂNTICA] 1 erro(s)
-  - 1:14    Identificador "x" não foi declarado
-    int main() { x = 10; }
-                 ^--- 'x' não existe neste escopo
-
-TOTAL GERAL: 1 erro(s)
-
-❌ Compilação falhou com 1 erro(s)
-```
-
-### 7️⃣ Executar Testes
-
-```bash
-# Executa todos os testes
-npm test
-
-# Modo watch (re-executa ao salvar)
-npm run test:watch
-
-# Gera relatório de cobertura
-npm run test:coverage
+TOTAL GERAL: 3 erro(s)
 ```
 
 ---
 
-## 🎯 Casos de Uso
+## Conceitos Avançados
 
-### Para Estudantes
+### Gramáticas Livres de Contexto (CFG)
 
-Entenda **como compiladores funcionam** na prática:
-- Veja tokens sendo gerados
-- Entenda erros léxicos, sintáticos e semânticos
-- Compare estratégias (Manual vs NFA)
+A sintaxe de C++ é uma **Context-Free Grammar**:
 
-### Para Professores
-
-Use como **material didático**:
-- Código bem documentado
-- Exemplos práticos
-- Fácil de modificar e experimentar
-
-### Para Desenvolvedores
-
-Aprenda sobre:
-- Design patterns (Strategy, Pipeline, Collector)
-- Arquitetura de compiladores
-- Autômatos finitos (NFA)
-- Clean Code na prática
-
----
-
-## 🎓 Conceitos-Chave
-
-### 1. Token
-
-**Definição**: Unidade léxica mínima com significado.
-
-**Exemplos**:
-- `int` → Palavra reservada
-- `x` → Identificador
-- `+` → Operador
-- `123` → Número
-
-### 2. Lexema
-
-**Definição**: Texto original do token.
-
-**Exemplo**:
-- Token: IDENTIFIER
-- Lexema: `"variavel"`
-
-### 3. Gramática
-
-**Definição**: Regras que definem a estrutura válida da linguagem.
-
-**Exemplo**:
 ```
-declaracao → tipo identificador ';'
-tipo       → 'int' | 'float' | 'void'
+E → E + T | E - T | T
+T → T * F | T / F | F
+F → (E) | número | identificador
 ```
 
-### 4. Escopo
+**Propriedades:**
+- Cada regra tem um único símbolo não-terminal à esquerda
+- Lado direito pode ter terminais e não-terminais
+- Permite recursão
 
-**Definição**: Região do código onde um identificador é válido.
+### Teoria de Autômatos
 
-**Exemplo**:
-```cpp
-int main() {
-  int x = 10;     // x válido aqui
-  {
-    int y = 20;   // y válido só neste bloco
-  }
-  // y não existe mais aqui
-}
+**AFN (NFA - Nondeterministic Finite Automaton)**:
+- Pode ter múltiplas transições para o mesmo símbolo
+- Pode ter transições ε (epsilon - sem consumir caractere)
+- Implementação baseada no **Algoritmo de Thompson**
+
+**Construção de Thompson**:
+```
+char 'a':  ─a→
+
+a|b:       ─a→
+          ↗   ↘
+         ε     ε
+          ↖   ↗
+           ─b→
+
+ab:        ─a→─b→
+
+a*:        ┌──ε──┐
+          ↗     ↘
+         ─a→─ε→─
+          ↖     ↗
+           └─ε─┘
 ```
 
-### 5. Autômato Finito (NFA)
+### LL(1) vs LR(1)
 
-**Definição**: Máquina abstrata que reconhece padrões.
+Este projeto usa **LL(1)** (Left-to-right, Leftmost derivation, 1 lookahead):
+- Parser recursivo descendente
+- Simples de implementar
+- Fácil de entender e debugar
 
-**Uso**: Base teórica para tokenizadores robustos.
-
----
-
-## 🚀 Próximos Passos
-
-Depois de entender os conceitos:
-
-1. **Leia o código** - Navegue pelos arquivos para ver a implementação
-2. **Execute exemplos** - Use os arquivos em `samples/`
-3. **Modifique** - Adicione novas palavras-chave, operadores
-4. **Crie testes** - Valide suas modificações
-5. **Aprofunde** - Leia [ARCHITECTURE.md](ARCHITECTURE.md) para detalhes técnicos
+**LR(1)** seria mais poderoso, mas mais complexo:
+- Bottom-up parsing
+- Requer tabelas de parsing
+- Mais difícil de implementar manualmente
 
 ---
 
-## 📚 Recursos Adicionais
+## Conclusão
 
-### Documentação
+Este projeto demonstra de forma **educacional e prática** como um compilador front-end funciona:
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Arquitetura técnica detalhada
-- **[README.md](README.md)** - Guia de uso e referência rápida
+✅ **Análise Léxica**: Transforma texto em tokens  
+✅ **Análise Sintática**: Verifica estrutura gramatical  
+✅ **Análise Semântica**: Valida regras de significado  
+✅ **Sistema de Erros**: Coleta e reporta problemas de todas as fases  
 
-### Livros Recomendados
-
-- **"Compiladores: Princípios, Técnicas e Ferramentas"** (Dragon Book)
-- **"Modern Compiler Implementation"** (Tiger Book)
-- **"Engineering a Compiler"** (Cooper & Torczon)
-
-### Conceitos para Estudar
-
-- Autômatos Finitos (DFA/NFA)
-- Expressões Regulares
-- Análise Sintática (LL, LR, LALR)
-- Tabelas de Símbolos
-- Árvores Sintáticas Abstratas (AST)
+Para entender **como** isso é implementado tecnicamente, consulte **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
 ---
 
-## ❓ Perguntas Frequentes
+## Referências
 
-### Por que três fases?
-
-Cada fase tem uma responsabilidade específica:
-- **Léxica**: Reconhecer pedaços de texto
-- **Sintática**: Validar estrutura
-- **Semântica**: Garantir significado
-
-Separar facilita manutenção e compreensão.
-
-### Manual vs NFA: qual é melhor?
-
-**Manual**: Mais simples, educacional  
-**NFA**: Mais robusto, teórico
-
-Para aprender, comece com Manual. Para entender teoria, explore NFA.
-
-### Onde estão os arquivos gerados?
-
-Todos os arquivos são salvos em `results/`:
-- `arquivo.tokens.json`
-- `arquivo.tokens.csv`
-- `arquivo.errors.json`
-
-### Como adicionar suporte para Python/Java?
-
-O projeto foi projetado para ser extensível. Você precisaria:
-1. Criar pasta `src/languages/python/`
-2. Implementar lexer, parser e semantic analyzer
-3. Definir a gramática (keywords, operators)
-4. Usar a mesma infraestrutura de `scanning/`
-
----
-
-## ✅ Resumo
-
-Este projeto demonstra as **três fases fundamentais** de um compilador:
-
-1. **🔍 Análise Léxica**: Quebra texto em tokens
-2. **📝 Análise Sintática**: Valida estrutura gramatical
-3. **🧠 Análise Semântica**: Verifica significado e contexto
-
-Cada fase:
-- ✅ Tem responsabilidade única
-- ✅ Detecta erros específicos
-- ✅ Reporta problemas de forma clara
-- ✅ É independente e testável
-
-**Objetivo**: Ensinar como compiladores funcionam de forma prática e acessível! 🎓
-
----
-
-**🎉 Agora você está pronto para explorar o código!**
-
-Comece executando exemplos em `samples/` e veja o compilador em ação.  
-Dúvidas técnicas? Consulte [ARCHITECTURE.md](ARCHITECTURE.md).
-
+- **Compilers: Principles, Techniques, and Tools** (Dragon Book) - Aho, Lam, Sethi, Ullman
+- **Engineering a Compiler** - Cooper & Torczon
+- **Modern Compiler Implementation in ML/C/Java** - Andrew Appel
+- **C++ Standard (ISO/IEC 14882)** - Especificação oficial da linguagem

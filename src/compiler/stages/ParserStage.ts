@@ -3,7 +3,7 @@
  */
 import { Token } from '../strategies/LexerStrategy';
 import { ParserStrategy } from '../strategies/ParserStrategy';
-import { ErrorCollector } from '../../errors';
+import { ErrorCollector } from '../../error';
 import { ParserResult } from '../types';
 
 export class ParserStage<T extends Token = Token> {
