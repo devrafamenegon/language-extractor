@@ -1,5 +1,5 @@
 import { Token } from './LexerStrategy';
-import { ErrorCollector } from '../../errors';
+import { ErrorCollector } from '../../error';
 
 /**
  * Interface genérica de estratégia de análise semântica.

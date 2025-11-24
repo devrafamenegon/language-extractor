@@ -1,5 +1,5 @@
 import { Token } from './strategies/LexerStrategy';
-import { LexicalError, SyntacticError, SemanticError } from '../errors';
+import { LexicalError, SyntacticError, SemanticError } from '../error';
 
 /**
  * Resultado da análise léxica (genérico).

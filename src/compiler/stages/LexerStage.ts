@@ -2,7 +2,7 @@
  * Fase de Análise Léxica
  */
 import { LexerStrategy, Token } from '../strategies/LexerStrategy';
-import { ErrorCollector } from '../../errors';
+import { ErrorCollector } from '../../error';
 import { LexerResult } from '../types';
 
 export class LexerStage<T extends Token = Token> {

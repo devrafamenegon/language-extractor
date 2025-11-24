@@ -3,7 +3,7 @@
  */
 import { Token } from '../strategies/LexerStrategy';
 import { SemanticStrategy } from '../strategies/SemanticStrategy';
-import { ErrorCollector } from '../../errors';
+import { ErrorCollector } from '../../error';
 import { SemanticResult } from '../types';
 
 export class SemanticStage<T extends Token = Token> {
