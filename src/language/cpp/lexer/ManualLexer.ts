@@ -24,19 +24,17 @@ function* scanTokensOrdered(sourceCode: string, errorCollector?: ErrorCollector)
   ]);
   const lineStarts = buildLineStartIndices(sourceCode);
   
-  // Detecta erros léxicos antes da tokenização
+  // Detecta erros léxicos SOMENTE em comentários não fechados
+  // (outros erros são detectados durante a tokenização no código preprocessado)
   if (errorCollector) {
-    // Detecta comentários não fechados
+    // Detecta comentários não fechados (precisa ser no código original)
     const unclosedComment = detectUnclosedComments(sourceCode, lineStarts);
     if (unclosedComment) {
       errorCollector.addLexical(unclosedComment);
     }
     
-    // Detecta strings/caracteres não fechados
-    const unclosedString = detectUnclosedStrings(sourceCode, lineStarts, 0);
-    if (unclosedString) {
-      errorCollector.addLexical(unclosedString);
-    }
+    // Strings/caracteres não fechados são detectados durante a tokenização
+    // para evitar falsos positivos em comentários
   }
 
   const punctRx = getPunctuatorRegex();

@@ -1,20 +1,5 @@
 import { TokenRow } from '../consts/codes';
-import { ErrorCollector, SyntacticError } from '../../../error';
-
-type DelimiterType = '(' | '{' | '[';
-type DelimiterStack = Array<{ token: TokenRow; type: DelimiterType }>;
-
-const DELIMITER_PAIRS: Record<DelimiterType, string> = {
-  '(': ')',
-  '{': '}',
-  '[': ']',
-};
-
-const DELIMITER_ERROR_TYPES: Record<DelimiterType, SyntacticError['tipo']> = {
-  '(': 'parentese_nao_fechado',
-  '{': 'chave_nao_fechada',
-  '[': 'colchete_nao_fechado',
-};
+import { ErrorCollector } from '../../../error';
 
 export class Parser {
   private tokens: TokenRow[];
@@ -30,245 +15,403 @@ export class Parser {
     while (!this.isAtEnd()) {
       this.declaration();
     }
-    this.validateAllDelimiters();
   }
 
   private declaration(): void {
-    this.match('palavra_reservada')
-      ? this.handleTypeDeclaration()
-      : this.expression();
+    // Tenta consumir modificadores opcionais (const, static, etc)
+    while (this.matchKeyword('const') || this.matchKeyword('static') || 
+           this.matchKeyword('volatile') || this.matchKeyword('extern')) {
+      // Consome modificadores
+    }
+
+    // Verifica se é uma declaração de tipo
+    if (this.isTypeKeyword()) {
+      this.typeDeclaration();
+    } else if (this.peek()?.tipo === 'identificador') {
+      // Pode ser namespace, tipo customizado, ou statement
+      this.expressionStatement();
+    } else if (this.match('delimitador', '{')) {
+      // Bloco
+      this.block();
+    } else if (!this.isAtEnd()) {
+      this.advance();
+    }
   }
 
-  private handleTypeDeclaration(): void {
-    const typeToken = this.previous();
-    if (!typeToken) return;
+  private isTypeKeyword(): boolean {
+    const token = this.peek();
+    if (token?.tipo !== 'palavra_reservada') return false;
+    
+    const typeKeywords = ['int', 'char', 'bool', 'float', 'double', 'void', 
+                          'short', 'long', 'unsigned', 'signed'];
+    return typeKeywords.includes(token.valor);
+  }
 
+  private typeDeclaration(): void {
+    // Consome o tipo
+    this.advance();
+
+    // Consome ponteiros/referências
+    while (this.match('operador', '*') || this.match('operador', '&')) {
+      // Consome * ou &
+    }
+
+    // Deve ter pelo menos um identificador
     if (!this.match('identificador')) {
-      this.reportMissingIdentifier(typeToken);
       return;
     }
 
-    this.processDeclarationType();
-    this.finalizeDeclaration();
-  }
-
-  private processDeclarationType(): void {
-    if (this.match('delimitador', '(')) {
-      this.expression();
-    } else if (this.match('operador', '=')) {
-      this.expression();
+    // Templates (ex: vector<int>)
+    if (this.match('operador', '<')) {
+      this.consumeUntilBalanced('<', '>');
     }
-  }
 
-  private finalizeDeclaration(): void {
-    if (!this.match('delimitador', ';') && this.isNextTokenOpenBrace()) {
-      this.block();
+    // Lista de declarações separadas por vírgula
+    while (true) {
+      // Array dimensions [N]
+      while (this.match('delimitador', '[')) {
+        this.consumeUntilDelimiter(']');
+      }
+
+      // Função (parâmetros)
+      if (this.match('delimitador', '(')) {
+        this.consumeUntilDelimiter(')');
+        
+        // Corpo da função
+        if (this.check('delimitador', '{')) {
+          this.match('delimitador', '{');
+          this.block();
+          return;
+        }
+      }
+
+      // Inicialização
+      if (this.matchAnyOperator(['=', '{'])) {
+        if (this.previous()?.valor === '{') {
+          // Inicialização com lista: {1, 2, 3}
+          this.consumeUntilDelimiter('}');
+        } else {
+          // Inicialização normal: = expr
+          this.expression();
+        }
+      }
+
+      // Se encontrar vírgula, tem mais declarações
+      if (this.match('delimitador', ',')) {
+        // Próximo declarador
+        while (this.match('operador', '*') || this.match('operador', '&')) {
+          // Ponteiros
+        }
+        if (!this.match('identificador')) {
+          break;
+        }
+      } else {
+        break;
+      }
     }
+
+    // Ponto e vírgula final
+    this.match('delimitador', ';');
   }
 
-  private isNextTokenOpenBrace(): boolean {
-    const next = this.peek();
-    return next?.tipo === 'delimitador' && next?.valor === '{';
+  private expressionStatement(): void {
+    this.expression();
+    this.match('delimitador', ';');
   }
 
   private block(): void {
-    if (!this.match('delimitador', '{')) return;
-
     while (!this.check('delimitador', '}') && !this.isAtEnd()) {
       this.declaration();
     }
-
-    this.expectDelimiter('}', 'chave_nao_fechada', 'Chave não foi fechada');
+    this.match('delimitador', '}');
   }
 
   private expression(): void {
+    this.ternary();
+  }
+
+  private ternary(): void {
+    this.assignment();
+
+    if (this.match('operador', '?')) {
+      this.expression();
+      this.match('operador', ':');
+      this.ternary();
+    }
+  }
+
+  private assignment(): void {
+    this.logicalOr();
+
+    // Operadores de atribuição
+    const assignOps = ['=', '+=', '-=', '*=', '/=', '%=', 
+                       '&=', '|=', '^=', '<<=', '>>='];
+    
+    if (this.matchAnyOperator(assignOps)) {
+      this.assignment();
+    }
+  }
+
+  private logicalOr(): void {
+    this.logicalAnd();
+    while (this.match('operador', '||')) {
+      this.logicalAnd();
+    }
+  }
+
+  private logicalAnd(): void {
+    this.bitwiseOr();
+    while (this.match('operador', '&&')) {
+      this.bitwiseOr();
+    }
+  }
+
+  private bitwiseOr(): void {
+    this.bitwiseXor();
+    while (this.match('operador', '|')) {
+      this.bitwiseXor();
+    }
+  }
+
+  private bitwiseXor(): void {
+    this.bitwiseAnd();
+    while (this.match('operador', '^')) {
+      this.bitwiseAnd();
+    }
+  }
+
+  private bitwiseAnd(): void {
     this.equality();
+    while (this.match('operador', '&')) {
+      this.equality();
+    }
   }
 
   private equality(): void {
-    this.parseBinaryOperators(
-      () => this.comparison(),
-      ['==', '!=']
-    );
+    this.comparison();
+    while (this.matchAnyOperator(['==', '!='])) {
+      this.comparison();
+    }
   }
 
   private comparison(): void {
-    this.parseBinaryOperators(
-      () => this.term(),
-      ['<', '>', '<=', '>=']
-    );
+    this.shift();
+    while (this.matchAnyOperator(['<', '>', '<=', '>='])) {
+      this.shift();
+    }
   }
 
-  private term(): void {
-    this.parseBinaryOperators(
-      () => this.factor(),
-      ['+', '-']
-    );
+  private shift(): void {
+    this.additive();
+    while (this.matchAnyOperator(['<<', '>>'])) {
+      this.additive();
+    }
   }
 
-  private factor(): void {
-    this.parseBinaryOperators(
-      () => this.unary(),
-      ['*', '/']
-    );
+  private additive(): void {
+    this.multiplicative();
+    while (this.matchAnyOperator(['+', '-'])) {
+      this.multiplicative();
+    }
   }
 
-  private parseBinaryOperators(parseOperand: () => void, operators: string[]): void {
-    parseOperand();
-    while (operators.some(op => this.match('operador', op))) {
-      parseOperand();
+  private multiplicative(): void {
+    this.unary();
+    while (this.matchAnyOperator(['*', '/', '%'])) {
+      this.unary();
     }
   }
 
   private unary(): void {
-    (this.match('operador', '-') || this.match('operador', '!'))
-      ? this.unary()
-      : this.primary();
-  }
-
-  private primary(): void {
-    if (this.matchAny(['numero', 'string', 'caractere', 'identificador'])) {
+    // Operadores unários prefixos
+    if (this.matchAnyOperator(['!', '~', '+', '-', '++', '--', '*', '&'])) {
+      this.unary();
       return;
     }
 
-    if (this.match('delimitador', '(')) {
-      this.expression();
-      this.expectDelimiter(')', 'parentese_nao_fechado', 'Parêntese não foi fechado');
-      return;
+    // Type cast: (type)expr
+    if (this.check('delimitador', '(')) {
+      const saved = this.current;
+      this.advance(); // consome '('
+      
+      // Verifica se é um cast
+      if (this.isTypeKeyword() || this.peek()?.tipo === 'identificador') {
+        this.advance();
+        while (this.match('operador', '*')) {} // ponteiros
+        
+        if (this.match('delimitador', ')')) {
+          // É um cast, continua com unary
+          this.unary();
+          return;
+        }
+      }
+      
+      // Não é cast, restaura
+      this.current = saved;
     }
 
-    this.reportUnexpectedToken();
+    this.postfix();
   }
 
-  private matchAny(types: TokenRow['tipo'][]): boolean {
-    return types.some(type => this.match(type));
-  }
+  private postfix(): void {
+    this.primary();
 
-  private expectDelimiter(
-    delimiter: string,
-    errorType: SyntacticError['tipo'],
-    message: string
-  ): void {
-    if (!this.match('delimitador', delimiter)) {
-      const token = this.peek() || this.previous();
-      if (token) {
-        this.error(token, errorType, message, delimiter);
+    while (true) {
+      if (this.matchAnyOperator(['++', '--'])) {
+        // Pós-incremento/decremento
+        continue;
+      } else if (this.match('delimitador', '[')) {
+        // Array subscript
+        this.expression();
+        this.match('delimitador', ']');
+      } else if (this.match('delimitador', '(')) {
+        // Chamada de função
+        this.argumentList();
+        this.match('delimitador', ')');
+      } else if (this.matchAnyOperator(['.', '->'])) {
+        // Acesso a membro
+        this.match('identificador');
+      } else if (this.match('operador', '::')) {
+        // Namespace/scope
+        this.match('identificador');
+        
+        // Template após namespace
+        if (this.match('operador', '<')) {
+          this.consumeUntilBalanced('<', '>');
+        }
+      } else {
+        break;
       }
     }
   }
 
-  private validateAllDelimiters(): void {
-    const stack: DelimiterStack = [];
-
-    this.tokens
-      .filter(token => token.tipo === 'delimitador')
-      .forEach(token => this.processDelimiter(token, stack));
-
-    this.reportUnclosedDelimiters(stack);
-  }
-
-  private processDelimiter(token: TokenRow, stack: DelimiterStack): void {
-    const value = token.valor;
-
-    if (this.isOpeningDelimiter(value)) {
-      stack.push({ token, type: value as DelimiterType });
-    } else if (this.isClosingDelimiter(value)) {
-      this.validatePair(token, stack);
-    }
-  }
-
-  private isOpeningDelimiter(value: string): boolean {
-    return ['(', '{', '['].includes(value);
-  }
-
-  private isClosingDelimiter(value: string): boolean {
-    return [')', '}', ']'].includes(value);
-  }
-
-  private validatePair(token: TokenRow, stack: DelimiterStack): void {
-    if (stack.length === 0) {
-      this.reportUnexpectedClosing(token);
+  private primary(): void {
+    // Literais
+    if (this.matchAny(['numero', 'string', 'caractere'])) {
       return;
     }
 
-    const opening = stack.pop()!;
-    const expected = DELIMITER_PAIRS[opening.type];
+    // Palavras reservadas literais
+    if (this.matchKeyword('true') || this.matchKeyword('false') || 
+        this.matchKeyword('nullptr') || this.matchKeyword('NULL')) {
+      return;
+    }
 
-    if (token.valor !== expected) {
-      this.reportMismatchedDelimiter(token, expected);
+    // Identificador
+    if (this.match('identificador')) {
+      return;
+    }
+
+    // Expressão entre parênteses
+    if (this.match('delimitador', '(')) {
+      this.expression();
+      this.match('delimitador', ')');
+      return;
+    }
+
+    // Se não conseguiu consumir nada, avança para evitar loop infinito
+    if (!this.isAtEnd()) {
+      this.advance();
     }
   }
 
-  private reportUnclosedDelimiters(stack: DelimiterStack): void {
-    stack.forEach(({ token, type }) => {
-      this.error(
-        token,
-        DELIMITER_ERROR_TYPES[type],
-        `Delimitador ${type} não foi fechado`,
-        DELIMITER_PAIRS[type]
-      );
-    });
-  }
-
-  private reportMissingIdentifier(typeToken: TokenRow): void {
-    this.error(
-      this.peek() || typeToken,
-      'token_faltando',
-      'Esperado identificador após tipo',
-      'identificador'
-    );
-  }
-
-  private reportUnexpectedToken(): void {
-    const token = this.peek();
-    if (token) {
-      this.error(
-        token,
-        'token_inesperado',
-        `Token inesperado: ${token.valor}`,
-        undefined,
-        token.valor
-      );
+  private argumentList(): void {
+    if (this.check('delimitador', ')')) {
+      return;
     }
-    this.advance();
+
+    do {
+      this.expression();
+    } while (this.match('delimitador', ','));
   }
 
-  private reportUnexpectedClosing(token: TokenRow): void {
-    this.error(
-      token,
-      'token_inesperado',
-      `Delimitador de fechamento inesperado: ${token.valor}`,
-      undefined,
-      token.valor
-    );
+  private consumeUntilDelimiter(closing: string): void {
+    let depth = 1;
+    const opening = this.getOpeningDelimiter(closing);
+
+    while (!this.isAtEnd() && depth > 0) {
+      const token = this.peek();
+      if (token?.tipo === 'delimitador') {
+        if (token.valor === opening) {
+          depth++;
+        } else if (token.valor === closing) {
+          depth--;
+          if (depth === 0) {
+            this.advance();
+            return;
+          }
+        }
+      }
+      this.advance();
+    }
   }
 
-  private reportMismatchedDelimiter(token: TokenRow, expected: string): void {
-    this.error(
-      token,
-      'token_inesperado',
-      `Esperado ${expected}, encontrado ${token.valor}`,
-      expected,
-      token.valor
-    );
+  private consumeUntilBalanced(opening: string, closing: string): void {
+    let depth = 1;
+
+    while (!this.isAtEnd() && depth > 0) {
+      const token = this.peek();
+      if (token?.tipo === 'operador' || token?.tipo === 'delimitador') {
+        if (token.valor === opening) {
+          depth++;
+        } else if (token.valor === closing) {
+          depth--;
+          if (depth === 0) {
+            this.advance();
+            return;
+          }
+        }
+      }
+      this.advance();
+    }
   }
 
-  private check(tipo: TokenRow['tipo'], valor?: string): boolean {
-    if (this.isAtEnd()) return false;
-
-    const token = this.tokens[this.current];
-    if (!token || token.tipo !== tipo) return false;
-    if (valor !== undefined && token.valor !== valor) return false;
-
-    return true;
+  private getOpeningDelimiter(closing: string): string {
+    const pairs: Record<string, string> = {
+      ')': '(',
+      '}': '{',
+      ']': '['
+    };
+    return pairs[closing] || closing;
   }
 
+  // Métodos auxiliares
   private match(tipo: TokenRow['tipo'], valor?: string): boolean {
     if (this.check(tipo, valor)) {
       this.advance();
       return true;
     }
     return false;
+  }
+
+  private matchKeyword(keyword: string): boolean {
+    return this.match('palavra_reservada', keyword);
+  }
+
+  private matchAny(tipos: TokenRow['tipo'][]): boolean {
+    for (const tipo of tipos) {
+      if (this.match(tipo)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private matchAnyOperator(operators: string[]): boolean {
+    for (const op of operators) {
+      if (this.match('operador', op)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private check(tipo: TokenRow['tipo'], valor?: string): boolean {
+    if (this.isAtEnd()) return false;
+    const token = this.peek();
+    if (token?.tipo !== tipo) return false;
+    if (valor !== undefined && token?.valor !== valor) return false;
+    return true;
   }
 
   private advance(): TokenRow {
@@ -281,34 +424,18 @@ export class Parser {
   }
 
   private peek(): TokenRow | undefined {
-    return this.isAtEnd() ? undefined : this.tokens[this.current];
+    return this.tokens[this.current];
   }
 
   private previous(): TokenRow | undefined {
-    return this.current === 0 ? undefined : this.tokens[this.current - 1];
-  }
-
-  private error(
-    token: TokenRow,
-    tipo: SyntacticError['tipo'],
-    mensagem: string,
-    esperado?: string,
-    encontrado?: string
-  ): void {
-    this.errorCollector.addSyntactic({
-      fase: 'sintatico',
-      tipo,
-      mensagem,
-      linha: token.linha,
-      coluna: token.coluna,
-      trecho: token.valor,
-      esperado,
-      encontrado: encontrado || token.valor,
-    });
+    return this.tokens[this.current - 1];
   }
 }
 
+/**
+ * Função auxiliar para análise sintática
+ */
 export function parseSyntax(tokens: TokenRow[], errorCollector: ErrorCollector): void {
-  new Parser(tokens, errorCollector).parse();
+  const parser = new Parser(tokens, errorCollector);
+  parser.parse();
 }
-

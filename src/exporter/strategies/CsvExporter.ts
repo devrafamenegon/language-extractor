@@ -12,7 +12,9 @@ export class CsvExporter implements ExporterStrategy {
     };
 
     const baseName = path.basename(context.filePath, path.extname(context.filePath));
-    const outPath = path.join(context.resultsDir, `${baseName}.tokens.csv`);
+    
+    // Exporta tokens
+    const tokensPath = path.join(context.resultsDir, `${baseName}.tokens.csv`);
     const lines: string[] = [];
     
     lines.push(`${toCsv('token')},${toCsv('codigo')},${toCsv('valor')},${toCsv('linha')},${toCsv('coluna')}`);
@@ -21,10 +23,32 @@ export class CsvExporter implements ExporterStrategy {
     }
     
     const csv = lines.join('\n');
-    await fs.writeFile(outPath, csv, 'utf8');
-    console.log(`Arquivo salvo em: ${outPath}`);
+    await fs.writeFile(tokensPath, csv, 'utf8');
+    console.log(`Tokens salvos em: ${tokensPath}`);
     
+    // Exporta erros
     if (context.errors.total > 0) {
+      const errorsPath = path.join(context.resultsDir, `${baseName}.errors.csv`);
+      const errorLines: string[] = [];
+      
+      errorLines.push(`${toCsv('tipo')},${toCsv('linha')},${toCsv('coluna')},${toCsv('mensagem')},${toCsv('contexto')}`);
+      
+      for (const err of context.errors.lexicos) {
+        errorLines.push(`${toCsv('LÉXICO')},${toCsv(err.linha)},${toCsv(err.coluna)},${toCsv(err.mensagem)},${toCsv(err.trecho || '')}`);
+      }
+      
+      for (const err of context.errors.sintaticos) {
+        errorLines.push(`${toCsv('SINTÁTICO')},${toCsv(err.linha)},${toCsv(err.coluna)},${toCsv(err.mensagem)},${toCsv(err.trecho || '')}`);
+      }
+      
+      for (const err of context.errors.semanticos) {
+        errorLines.push(`${toCsv('SEMÂNTICO')},${toCsv(err.linha)},${toCsv(err.coluna)},${toCsv(err.mensagem)},${toCsv(err.trecho || '')}`);
+      }
+      
+      const errorsCsv = errorLines.join('\n');
+      await fs.writeFile(errorsPath, errorsCsv, 'utf8');
+      console.log(`Erros salvos em: ${errorsPath}`);
+      
       console.log(formatErrors(context.errors));
       process.exit(1);
     }
