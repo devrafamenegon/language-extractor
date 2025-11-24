@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ErrorCollector, formatErrors } from '../src/errors';
+import { ErrorCollector, formatErrors } from '../src/error';
 
 describe('ErrorCollector e formatadores', () => {
   it('agrega erros por fase e formata saída legível', () => {

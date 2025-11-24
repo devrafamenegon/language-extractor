@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { tokenizeOrdered, tokenizeOrderedAfn } from '../src/languages/cpp/lexer';
-import { ErrorCollector } from '../src/errors';
+import { tokenizeOrdered, tokenizeOrderedAfn } from '../src/language/cpp/lexer';
+import { ErrorCollector } from '../src/error';
 
 const validSource = `
 int main() {
