@@ -47,7 +47,8 @@ npm install
 ```
 
 ### Scripts
-- `npm run dev` – executa a CLI com tsx (hot reload)
+- `npm run dev` – executa a CLI com tsx (sem watch)
+- `npm run dev:watch` – executa a CLI com tsx (hot reload)
 - `npm run build` – compila TypeScript para `dist/`
 - `npm start` – executa `dist/index.js` (requer build prévio)
 - `npm test` – executa a suíte de testes unitários (Vitest)
