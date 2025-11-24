@@ -2,6 +2,5 @@
  * Módulo de análise sintática para C++.
  */
 
-export { Parser } from './parser';
-export { parseSyntax } from './parser';
+export { Parser, parseSyntax } from './Parser';
 export { CppParserStrategy } from './ParserStrategy';

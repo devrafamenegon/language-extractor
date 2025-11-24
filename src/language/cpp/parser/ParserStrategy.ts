@@ -1,7 +1,7 @@
 import { ParserStrategy } from '../../../compiler/strategies/ParserStrategy';
-import { TokenRow } from '../tokens/codes';
-import { ErrorCollector } from '../../../errors';
-import { Parser } from './parser';
+import { TokenRow } from '../consts/codes';
+import { ErrorCollector } from '../../../error';
+import { Parser } from './Parser';
 
 /**
  * Estratégia de análise sintática para C++.

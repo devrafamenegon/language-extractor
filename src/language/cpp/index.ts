@@ -7,18 +7,12 @@
  * - Semantic (análise semântica)
  */
 
-// Análise Léxica (Lexer)
 export * from './lexer';
-
-// Análise Sintática (Parser)
 export * from './parser';
-
-// Análise Semântica
 export * from './semantic';
 
-// Gramática
-export * from './grammar/keywords';
-export * from './grammar/punctuators';
+export * from './consts/keywords';
+export * from './consts/punctuators';
+export * from './consts/codes';
 
-// Tokens
-export * from './tokens/codes';
+export * from './types';

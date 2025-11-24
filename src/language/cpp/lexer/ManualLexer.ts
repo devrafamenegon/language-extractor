@@ -5,13 +5,13 @@
  * - Atribui códigos por categoria e calcula posição (linha/coluna) de início.
  * - Detecta e reporta erros léxicos.
  */
-import { cppKeywordSet } from '../../grammar/keywords';
-import { getPunctuatorRegex } from '../../grammar/punctuators';
-import { CODE_BASE, TokenRow } from '../../tokens/codes';
-import { buildLineStartIndices, indexToLineCol } from '../../../../scanning/line-mapping';
-import { stripComments, stripBom, lineSplicing, runPreprocessPipeline } from '../../../../scanning/preprocessing';
-import { ErrorCollector } from '../../../../errors/ErrorCollector';
-import { detectUnclosedStrings, detectUnclosedComments, detectInvalidCharacters } from '../../errors/LexicalErrorDetector';
+import { cppKeywordSet } from '../consts/keywords';
+import { getPunctuatorRegex } from '../consts/punctuators';
+import { CODE_BASE, TokenRow } from '../consts/codes';
+import { buildLineStartIndices, indexToLineCol } from '../../../scanner/position';
+import { stripComments, stripBom, lineSplicing, runPreprocessPipeline } from '../../../scanner/preprocessing';
+import { ErrorCollector } from '../../../error/ErrorCollector';
+import { detectUnclosedStrings, detectUnclosedComments, detectInvalidCharacters } from './LexicalErrorDetector';
 
 const identifierStart = /[A-Za-z_]/;
 const identifierPart = /[A-Za-z0-9_]/;
@@ -195,8 +195,7 @@ function* scanTokensOrdered(sourceCode: string, errorCollector?: ErrorCollector)
   }
 }
 
-export function tokenizeOrdered(sourceCode: string, errorCollector?: ErrorCollector): TokenRow[] {
+export function tokenize(sourceCode: string, errorCollector?: ErrorCollector): TokenRow[] {
   return Array.from(scanTokensOrdered(sourceCode, errorCollector));
 }
-
 

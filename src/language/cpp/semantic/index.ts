@@ -2,6 +2,5 @@
  * Módulo de análise semântica para C++.
  */
 
-export { SemanticAnalyzer } from './analyzer';
-export { analyzeSemantics } from './analyzer';
+export { SemanticAnalyzer, analyzeSemantics } from './SemanticAnalyzer';
 export { CppSemanticStrategy } from './SemanticStrategy';

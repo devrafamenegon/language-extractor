@@ -1,7 +1,7 @@
 import { SemanticStrategy } from '../../../compiler/strategies/SemanticStrategy';
-import { TokenRow } from '../tokens/codes';
-import { ErrorCollector } from '../../../errors';
-import { SemanticAnalyzer } from './analyzer';
+import { TokenRow } from '../consts/codes';
+import { ErrorCollector } from '../../../error';
+import { SemanticAnalyzer } from './SemanticAnalyzer';
 
 /**
  * Estratégia de análise semântica para C++.

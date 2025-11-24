@@ -1,9 +1,9 @@
 /**
  * Detector de erros léxicos específicos de C++.
  */
-import { LexicalError } from '../../../errors/ErrorTypes';
-import { LexicalErrorType } from './ErrorTypes';
-import { indexToLineCol } from '../../../scanning/line-mapping/lineIndex';
+import { LexicalError } from '../../../error/types';
+import { LexicalErrorType } from '../types';
+import { indexToLineCol } from '../../../scanner/position';
 
 export function detectUnclosedStrings(
   sourceCode: string,
@@ -213,5 +213,6 @@ export function detectInvalidCharacters(
   
   return errors;
 }
+
 
 

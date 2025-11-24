@@ -5,15 +5,15 @@
  * - Emite as mesmas linhas de token do tokenizador manual.
  * - Detecta e reporta erros léxicos.
  */
-import { cppKeywordSet } from '../../grammar/keywords';
-import { cppPunctuators } from '../../grammar/punctuators';
-import { CODE_BASE, TokenRow } from '../../tokens/codes';
-import { Afn, charClass, literal, concatenate, alternate, kleeneStar, plus, combineAlternation, matchLongest } from '../../../../scanning/nfa';
-import { buildLineStartIndices, indexToLineCol } from '../../../../scanning/line-mapping';
-import { stripComments, stripBom, lineSplicing, runPreprocessPipeline } from '../../../../scanning/preprocessing';
-import { ErrorCollector } from '../../../../errors/ErrorCollector';
-import { detectUnclosedStrings, detectUnclosedComments, detectInvalidCharacters } from '../../errors/LexicalErrorDetector';
-import { LexicalErrorType } from '../../errors/ErrorTypes';
+import { cppKeywordSet } from '../consts/keywords';
+import { cppPunctuators } from '../consts/punctuators';
+import { CODE_BASE, TokenRow } from '../consts/codes';
+import { Afn, charClass, literal, concatenate, alternate, kleeneStar, plus, combineAlternation, matchLongest } from '../../../scanner/nfa';
+import { buildLineStartIndices, indexToLineCol } from '../../../scanner/position';
+import { stripComments, stripBom, lineSplicing, runPreprocessPipeline } from '../../../scanner/preprocessing';
+import { ErrorCollector } from '../../../error/ErrorCollector';
+import { detectUnclosedStrings, detectUnclosedComments, detectInvalidCharacters } from './LexicalErrorDetector';
+import { LexicalErrorType } from '../types';
 
 enum Label {
   WS = 'WS',
@@ -80,7 +80,7 @@ const megaAfn = buildAfn();
  * Tokeniza preservando índices: usa texto preprocessado para casar,
  * mas recorta lexemas do `sourceCode` original.
  */
-export function tokenizeOrderedAfn(sourceCode: string, errorCollector?: ErrorCollector): TokenRow[] {
+export function tokenize(sourceCode: string, errorCollector?: ErrorCollector): TokenRow[] {
   const preprocessed = runPreprocessPipeline(sourceCode, [
     stripBom,
     lineSplicing,
@@ -283,5 +283,4 @@ export function tokenizeOrderedAfn(sourceCode: string, errorCollector?: ErrorCol
   
   return tokens;
 }
-
 
