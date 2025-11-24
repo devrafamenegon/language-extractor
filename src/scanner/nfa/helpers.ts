@@ -37,7 +37,7 @@ export function combineAlternation(labeled: ReadonlyArray<LabeledAfn>): Afn {
 /**
  * Fecha um conjunto de estados por transições epsilon.
  */
-function epsilonClosure(states: Set<AfnState>): Set<AfnState> {
+export function epsilonClosure(states: Set<AfnState>): Set<AfnState> {
   const stack: AfnState[] = [...states];
   const visited = new Set<AfnState>(states);
   while (stack.length) {
@@ -55,7 +55,7 @@ function epsilonClosure(states: Set<AfnState>): Set<AfnState> {
 /**
  * Move via transições condicionais consumindo um caractere.
  */
-function move(states: Set<AfnState>, ch: string): Set<AfnState> {
+export function move(states: Set<AfnState>, ch: string): Set<AfnState> {
   const out = new Set<AfnState>();
   for (const s of states) {
     for (const t of s.transitions) {

@@ -43,4 +43,3 @@ export function indexToLineCol(lineStarts: number[], index: number): { line: num
   return { line: lineStarts.length, column: index - lastStart + 1 };
 }
 
-

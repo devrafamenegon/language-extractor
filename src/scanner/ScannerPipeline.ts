@@ -8,15 +8,15 @@
  */
 
 import { PreprocessStep, runPreprocessPipeline } from './preprocessing';
-import { buildLineStartIndices } from './line-mapping';
+import { buildLineStartIndices } from './position';
 
-export interface ScanningResult {
+export interface ScannerResult {
   original: string;
   preprocessed: string;
   lineStarts: number[];
 }
 
-export class ScanningPipeline {
+export class ScannerPipeline {
   private source: string;
   private preprocessSteps: PreprocessStep[] = [];
   private buildLineMap: boolean = false;
@@ -35,7 +35,7 @@ export class ScanningPipeline {
     return this;
   }
 
-  build(): ScanningResult {
+  build(): ScannerResult {
     const preprocessed = this.preprocessSteps.length > 0
       ? runPreprocessPipeline(this.source, this.preprocessSteps)
       : this.source;
