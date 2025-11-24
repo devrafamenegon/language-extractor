@@ -17,7 +17,7 @@ export interface AnalysisError {
   mensagem: string;
   linha: number;
   coluna: number;
-  trecho?: string;
+  trecho?: string | undefined;
 }
 
 /**
@@ -34,8 +34,8 @@ export interface LexicalError extends AnalysisError {
 export interface SyntacticError extends AnalysisError {
   fase: 'sintatico';
   tipo: string;
-  esperado?: string;
-  encontrado?: string;
+  esperado?: string | undefined;
+  encontrado?: string | undefined;
 }
 
 /**

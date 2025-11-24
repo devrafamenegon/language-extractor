@@ -1,6 +1,6 @@
 /**
  * Módulo de tratamento de erros de análise (genérico).
  */
-export * from './ErrorTypes';
+export * from './types';
 export * from './ErrorCollector';
-export * from './ErrorFormatter';
+export * from './formatter';

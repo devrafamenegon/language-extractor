@@ -2,7 +2,8 @@
  * Coletor centralizado de erros de análise.
  * Permite adicionar erros de diferentes fases e consultá-los.
  */
-import { ErrorCollection, LexicalError, SyntacticError, SemanticError } from './ErrorTypes';
+import { ErrorCollection, LexicalError, SyntacticError, SemanticError } from './types';
+import { ErrorPhase } from './types';
 
 export class ErrorCollector {
   private lexicos: LexicalError[] = [];
@@ -34,13 +35,13 @@ export class ErrorCollector {
     return this.lexicos.length > 0 || this.sintaticos.length > 0 || this.semanticos.length > 0;
   }
 
-  hasErrorsIn(phase: 'lexico' | 'sintatico' | 'semantico'): boolean {
+  hasErrorsIn(phase: ErrorPhase): boolean {
     switch (phase) {
-      case 'lexico':
+      case ErrorPhase.LEXICAL:
         return this.lexicos.length > 0;
-      case 'sintatico':
+      case ErrorPhase.SYNTACTIC:
         return this.sintaticos.length > 0;
-      case 'semantico':
+      case ErrorPhase.SEMANTIC:
         return this.semanticos.length > 0;
     }
   }

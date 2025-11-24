@@ -1,5 +1,5 @@
 import { Token } from '../compiler/strategies/LexerStrategy';
-import { ErrorCollection } from '../errors';
+import { ErrorCollection } from '../error';
 
 /**
  * Contexto de exportação contendo todos os dados necessários (genérico).

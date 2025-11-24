@@ -1,5 +1,5 @@
 import { ExporterStrategy, ExportContext } from '../ExporterStrategy';
-import { formatErrors } from '../../errors';
+import { formatErrors } from '../../error';
 
 export class ConsoleExporter implements ExporterStrategy {
   async execute(context: ExportContext): Promise<void> {

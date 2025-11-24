@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import { ExporterStrategy, ExportContext } from '../ExporterStrategy';
-import { formatErrors } from '../../errors';
+import { formatErrors } from '../../error';
 
 export class JsonExporter implements ExporterStrategy {
   async execute(context: ExportContext): Promise<void> {

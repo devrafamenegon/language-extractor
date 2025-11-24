@@ -1,7 +1,4 @@
-/**
- * Formatadores de erros para diferentes outputs.
- */
-import { ErrorCollection, AnyError } from './ErrorTypes';
+import { ErrorCollection, AnyError } from './types';
 
 function formatSnippet(trecho?: string): string {
   if (!trecho) return '';
@@ -29,9 +26,6 @@ function formatError(error: AnyError): string {
   return `  - ${location} ${error.mensagem}${snippetStr}${extrasStr}`;
 }
 
-/**
- * Formata erros para console (texto humanizado).
- */
 export function formatErrors(errors: ErrorCollection): string {
   if (errors.total === 0) {
     return '';
@@ -60,9 +54,6 @@ export function formatErrors(errors: ErrorCollection): string {
   return lines.join('\n');
 }
 
-/**
- * Formata erros para JSON (estruturado).
- */
 export function formatErrorsJson(errors: ErrorCollection): string {
   return JSON.stringify({
     total: errors.total,
